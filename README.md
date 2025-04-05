@@ -1,1 +1,1 @@
-# phishing-detector-chrome-extension
+# Phishing detector - Chrome extension
