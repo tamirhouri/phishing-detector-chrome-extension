@@ -26,8 +26,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "phishing-detectors/url-detector.js",
-        "phishing-detectors/static-content-detector.js"
+        "phishing-detectors/*"
       ],
       "matches": [
         "<all_urls>"

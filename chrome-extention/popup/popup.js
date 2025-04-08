@@ -1,8 +1,8 @@
-async function getCurrentTabId() {
+async function getCurrentTab() {
   // can use also: chrome.tabs.query({ active: true, currentWindow: true })
   let queryOptions = { active: true, lastFocusedWindow: true };
   let [tab] = await chrome.tabs.query(queryOptions);
-  return tab?.id;
+  return tab;
 }
 
 function showLoader() {
@@ -38,19 +38,55 @@ function updateExtentionElementError(error) {
   document.getElementById('result').textContent = "Error retrieving classification";
 }
 
+function extractFeatures(url) {
+  return [
+    url.length,
+    url.includes('@') ? 1 : 0,
+    (url.match(/\./g) || []).length,
+    url.includes('-') ? 1 : 0,
+    url.startsWith('https') ? 1 : 0,
+    new URL(url).hostname.length
+  ];
+}
+
+function createDummyModel() {
+  const model = tf.sequential();
+  model.add(tf.layers.dense({
+    units: 1,
+    inputShape: [6],
+    activation: 'sigmoid',
+    useBias: true,
+    weights: [
+      tf.tensor2d([[0.01], [0.5], [0.05], [-0.1], [0.2], [-0.01]]),  // weights for 6 features
+      tf.tensor1d([0])  // bias
+    ]
+  }));
+  return model;
+}
+
 async function handlePhishingPrediction() {
   showLoader();
 
-  const currentTabId = await getCurrentTabId();
+  const currentTab = await getCurrentTab();
 
-  if (!currentTabId) {
+  if (!currentTab) {
     updateExtentionElementError("No active tab found.");
     return;
   }
 
-  console.log("currentTabId", currentTabId)
+  const url = currentTab.url;
+  const features = extractFeatures(url);
+  const model = createDummyModel();
 
-  chrome.tabs.sendMessage(currentTabId, { action: 'GetPrediction' }, (response) => {
+  const input = tf.tensor2d([features]);
+  const prediction = model.predict(input);
+  const score = prediction.dataSync()[0];
+
+  console.log("Prediction score:", score);
+
+  console.log("currentTabId", currentTab.id)
+
+  chrome.tabs.sendMessage(currentTab.id, { action: 'GetPrediction' }, (response) => {
     if (chrome.runtime.lastError) {
       updateExtentionElementError(chrome.runtime.lastError.message);
       return;
