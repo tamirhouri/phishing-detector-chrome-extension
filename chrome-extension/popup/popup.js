@@ -10,7 +10,7 @@ function showLoader() {
   resultEl.innerHTML = `<div class="loader"></div>`;
 }
 
-function updateExtentionElement(result) {
+function updateExtensionElement(result) {
   const { isURL, isContent, details } = result;
   const isPhishing = isURL || isContent;
 
@@ -33,35 +33,16 @@ function updateExtentionElement(result) {
   `;
 }
 
-function updateExtentionElementError(error) {
+function updateExtensionElementError(error) {
   console.error(error);
-  document.getElementById('result').textContent = "Error retrieving classification";
-}
 
-function extractFeatures(url) {
-  return [
-    url.length,
-    url.includes('@') ? 1 : 0,
-    (url.match(/\./g) || []).length,
-    url.includes('-') ? 1 : 0,
-    url.startsWith('https') ? 1 : 0,
-    new URL(url).hostname.length
-  ];
-}
-
-function createDummyModel() {
-  const model = tf.sequential();
-  model.add(tf.layers.dense({
-    units: 1,
-    inputShape: [6],
-    activation: 'sigmoid',
-    useBias: true,
-    weights: [
-      tf.tensor2d([[0.01], [0.5], [0.05], [-0.1], [0.2], [-0.01]]),  // weights for 6 features
-      tf.tensor1d([0])  // bias
-    ]
-  }));
-  return model;
+  const resultEl = document.getElementById('result');
+  resultEl.innerHTML = `
+    <div class="error-message">
+      <span class="error-icon">❌</span>
+      <span class="error-text">${error || 'An unknown error occurred.'}</span>
+    </div>
+  `;
 }
 
 async function handlePhishingPrediction() {
@@ -70,29 +51,26 @@ async function handlePhishingPrediction() {
   const currentTab = await getCurrentTab();
 
   if (!currentTab) {
-    updateExtentionElementError("No active tab found.");
+    updateExtensionElementError("No active tab found.");
     return;
   }
 
-  const url = currentTab.url;
-  const features = extractFeatures(url);
-  const model = createDummyModel();
-
-  const input = tf.tensor2d([features]);
-  const prediction = model.predict(input);
-  const score = prediction.dataSync()[0];
-
-  console.log("Prediction score:", score);
-
   console.log("currentTabId", currentTab.id)
+  console.log("GET_PREDICTION message sent from popup.js to content.js")
 
-  chrome.tabs.sendMessage(currentTab.id, { action: 'GetPrediction' }, (response) => {
+  chrome.tabs.sendMessage(currentTab.id, { action: 'GET_PREDICTION' }, (response) => {
+    console.log("GET_PREDICTION response received in popup.js", response);
     if (chrome.runtime.lastError) {
-      updateExtentionElementError(chrome.runtime.lastError.message);
+      updateExtensionElementError(chrome.runtime.lastError.message);
       return;
     }
 
-    updateExtentionElement(response.result);
+    if (!response || response.result.isError) {
+      updateExtensionElementError(response.details);
+      return;
+    }
+
+    updateExtensionElement(response.result);
   });
 }
 

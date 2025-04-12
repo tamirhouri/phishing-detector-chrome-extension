@@ -5,13 +5,16 @@
   "description": "Detects potential phishing pages based on URL and HTML content.",
   "permissions": [
     "tabs",
+    "scripting",
     "activeTab"
   ],
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_title": "Phishing Detector"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background/background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -26,7 +29,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "phishing-detectors/*"
+        "phishing-detectors/url-detector/*"
       ],
       "matches": [
         "<all_urls>"
