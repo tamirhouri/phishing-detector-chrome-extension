@@ -1,7 +1,7 @@
 export class StaticContentDetector {
     constructor() {}
 
-    predict(url) {
+    predict(document) {
         let score = 0;
         const htmlLength = document.documentElement.outerHTML.length;
         const isHtmlShort = htmlLength < 7500;

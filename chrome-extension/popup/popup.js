@@ -55,11 +55,10 @@ async function handlePhishingPrediction() {
     return;
   }
 
-  console.log("currentTabId", currentTab.id)
-  console.log("GET_PREDICTION message sent from popup.js to content.js")
+  console.log("[popup script] GET_PREDICTION message sent to content script with currentTabId", currentTab.id)
 
   chrome.tabs.sendMessage(currentTab.id, { action: 'GET_PREDICTION' }, (response) => {
-    console.log("GET_PREDICTION response received in popup.js", response);
+    console.log("[popup script] GET_PREDICTION response received", response);
     if (chrome.runtime.lastError) {
       updateExtensionElementError(chrome.runtime.lastError.message);
       return;
@@ -79,7 +78,7 @@ function initializeEventListeners() {
   if (refreshButton) {
     refreshButton.addEventListener('click', handlePhishingPrediction);
   } else {
-    console.error("Refresh button not found in the DOM.");
+    console.error("[popup script] Refresh button not found in the DOM.");
   }
 }
 

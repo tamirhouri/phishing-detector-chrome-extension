@@ -2,12 +2,12 @@ const URL_PREDICTION_THRESHOLD = 0.5;
 const CONTENT_PREDICTION_THRESHOLD = 0.5;
 
 async function getUrlPrediction() {
-  console.log("PREDICT_URL message sent from content.js to background.js")
+  console.log("[content script] Sending PREDICT_URL message to background script")
   return chrome.runtime.sendMessage({ action: 'PREDICT_URL', url: window.location.href });
 }
 
 async function getContentPrediction() {
-  console.log("PREDICT_CONTENT message sent from content.js to background.js")
+  console.log("[content script] Sending PREDICT_CONTENT message to background script")
   return chrome.runtime.sendMessage({ action: 'PREDICT_CONTENT', content: document.body.innerText });
 }
 
@@ -18,7 +18,7 @@ async function getPhishingPrediction() {
   ]);
 
   if (urlPrediction.status === 'FAIL' || contentPrediction.status === 'FAIL') {
-    console.error('Error retrieving predictions:', urlPrediction.error || contentPrediction.error);
+    console.error('[content script] Error retrieving predictions:', urlPrediction.error || contentPrediction.error);
     return { isError: true, details: "Error retrieving predictions." };
   }
 
@@ -36,7 +36,7 @@ async function getPhishingPrediction() {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'GET_PREDICTION') {
-    console.log("GET_PREDICTION message received in content.js", request);
+    console.log("[content script] GET_PREDICTION message received", request);
     getPhishingPrediction()
       .then(result => {
         sendResponse({ result });
