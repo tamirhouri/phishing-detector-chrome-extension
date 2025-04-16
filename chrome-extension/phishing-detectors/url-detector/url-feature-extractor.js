@@ -9,7 +9,7 @@ export class UrlFeaturesExtractor {
   // --------------------
 
   isHttps() {
-    return this.urlObj.protocol === 'https:';
+    return this.urlObj.protocol === 'https:' ? 1.0 : 0.0;
   }
 
   // You'd need to fetch this data with `chrome.tabs.query` or a background fetch to check SSL cert.
@@ -21,11 +21,11 @@ export class UrlFeaturesExtractor {
   usesSuspiciousTLD() {
     const tld = this.urlObj.hostname.split('.').pop();
     const badTLDs = ['tk', 'ml', 'ga', 'cf', 'gq'];
-    return badTLDs.includes(tld);
+    return badTLDs.includes(tld) ? 1.0 : 0.0;
   }
 
   usesIPAddress() {
-    return /^\d{1,3}(\.\d{1,3}){3}$/.test(this.urlObj.hostname);
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(this.urlObj.hostname) ? 1.0 : 0.0;
   }
 
   // ----------------------------
@@ -61,24 +61,24 @@ export class UrlFeaturesExtractor {
   }
 
   hasAtSymbol() {
-    return this.url.includes('@') ? 1 : 0;
+    return this.url.includes('@') ? 1.0 : 0.0;
   }
 
   hasDoubleSlashInPath() {
-    return this.urlObj.pathname.includes('//') ? 1 : 0;
+    return this.urlObj.pathname.includes('//') ? 1.0 : 0.0;
   }
 
   hasEquals() {
-    return this.url.includes('=') ? 1 : 0;
+    return this.url.includes('=') ? 1.0 : 0.0;
   }
 
   hasSemicolon() {
-    return this.url.includes(';') ? 1 : 0;
+    return this.url.includes(';') ? 1.0 : 0.0;
   }
 
   isShortened() {
     const shorteners = ['bit.ly', 'tinyurl.com', 'goo.gl', 'ow.ly', 't.co'];
-    return shorteners.some(domain => this.urlObj.hostname.includes(domain));
+    return shorteners.some(domain => this.urlObj.hostname.includes(domain)) ? 1.0 : 0.0;
   }
 
   // ---------------------
@@ -87,16 +87,16 @@ export class UrlFeaturesExtractor {
 
   containsBrandName() {
     const brands = ['paypal', 'facebook', 'google', 'apple', 'amazon', 'microsoft'];
-    return brands.some(name => this.url.toLowerCase().includes(name));
+    return brands.some(name => this.url.toLowerCase().includes(name)) ? 1.0 : 0.0;
   }
 
   containsPhishyWords() {
     const phishyWords = ['secure', 'account', 'login', 'update', 'verify', 'banking'];
-    return phishyWords.some(word => this.url.toLowerCase().includes(word));
+    return phishyWords.some(word => this.url.toLowerCase().includes(word)) ? 1.0 : 0.0;
   }
 
   looksLikeHex() {
-    return /[a-f0-9]{20,}/i.test(this.url);
+    return /[a-f0-9]{20,}/i.test(this.url) ? 1.0 : 0.0;
   }
 
   // --------------------
@@ -105,7 +105,7 @@ export class UrlFeaturesExtractor {
 
   isKnownDomain() {
     const whitelist = ['google.com', 'facebook.com', 'github.com']; // Extend as needed
-    return whitelist.some(domain => this.urlObj.hostname.endsWith(domain));
+    return whitelist.some(domain => this.urlObj.hostname.endsWith(domain)) ? 1.0 : 0.0;
   }
 
   domainAge() {
