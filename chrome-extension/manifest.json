@@ -22,17 +22,8 @@
         "<all_urls>"
       ],
       "js": [
+        "phishing-detectors/static-content-detector/static-content-detector.js",
         "scripts/content.js"
-      ]
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "phishing-detectors/url-detector/*"
-      ],
-      "matches": [
-        "<all_urls>"
       ]
     }
   ]

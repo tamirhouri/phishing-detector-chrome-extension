@@ -1,14 +1,24 @@
 const URL_PREDICTION_THRESHOLD = 0.5;
 const CONTENT_PREDICTION_THRESHOLD = 0.5;
 
-async function getUrlPrediction() {
-  console.log("[content script] Sending PREDICT_URL message to background script")
-  return chrome.runtime.sendMessage({ action: 'PREDICT_URL', url: window.location.href });
-}
+const staticContentDetector = new StaticContentDetector();
 
 async function getContentPrediction() {
-  console.log("[content script] Sending PREDICT_CONTENT message to background script")
-  return chrome.runtime.sendMessage({ action: 'PREDICT_CONTENT', content: document.body.innerText });
+  console.log("[content script] Predicting content using StaticContentDetector")
+  const prediction = staticContentDetector.predict();
+
+  if (prediction === null || prediction === undefined) {
+    console.error("[content script] Error during content prediction.");
+    return { status: 'FAIL', error: 'Content prediction failed' };
+  }
+
+  console.log("[content script] Content prediction score:", prediction.score, prediction.reasons);
+  return { status: 'SUCCESS', ...prediction };
+}
+
+async function getUrlPrediction() {
+  console.log("[content script] Sending PREDICT_URL message to background script")
+  return chrome.runtime.sendMessage({ action: 'PREDICT_URL', url: location.href });
 }
 
 async function getPhishingPrediction() {
