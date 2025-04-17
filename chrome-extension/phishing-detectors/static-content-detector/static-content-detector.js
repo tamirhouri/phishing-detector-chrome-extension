@@ -99,7 +99,7 @@ class StaticContentDetector {
 
                 // Case 1: Mismatched visible domain vs. actual link
                 const match = text.match(domainPattern);
-                if (match && !href.includes(match[0])) {
+                if (match && !href.includes(match[0]) && !text.includes("<")) { // Ensure text is not HTML
                     suspiciousCount++;
                     reasons.push(`Domain mismatch: text "${text}" vs href "${href}"`);
                     return;

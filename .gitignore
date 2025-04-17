@@ -1,0 +1,41 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Chrome extension build artifacts
+chrome-extension/libs/tf.es2017.min.js.map
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Miscellaneous
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Static content detector evaluation
+static-content-detector-evaluation/static_content_metrics.json
+static-content-detector-evaluation/static_content_results.json
+static-content-detector-evaluation/static_report.html
+
+# URL detector model
+# url-detector-model/*.bin
+url-detector-model/*.h5
+
+# Environment files
+.env
+.env.local
+.env.*.local
