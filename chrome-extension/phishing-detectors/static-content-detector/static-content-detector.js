@@ -1,38 +1,46 @@
 class StaticContentDetector {
-    constructor() { }
+    constructor(
+        _withReasons = false
+    ) { }
+
+    withReasons() {
+        this._withReasons = true;
+        return this;
+    }
 
     predict() {
         const detectors = [
-            { ...this._detectSuspiciousFormsScore(), weight: 1.0 },
-            { ...this._detectMismatchedLinkTextScore(), weight: 0.7 },
-            { ...this._detectExternalLogosScore(), weight: 0.4 },
-            { ...this._detectPasswordFieldsWithoutHTTPSScore(), weight: 1.0 },
-            { ...this._detectObfuscatedJavaScriptScore(), weight: 0.6 },
-            { ...this._detectTooManyInputFieldsScore(), weight: 0.3 }
+            { ...this._detectSuspiciousFormsScore(), weight: 0.3 },
+            { ...this._detectPasswordFieldsWithoutHTTPSScore(), weight: 0.3 },
+            { ...this._detectMismatchedLinkTextScore(), weight: 0.15 },
+            { ...this._detectObfuscatedJavaScriptScore(), weight: 0.15 },
+            { ...this._detectExternalLogosScore(), weight: 0.05 },
+            { ...this._detectTooManyInputFieldsScore(), weight: 0.05 }
         ];
 
-        const { totalWeight, weightedSum, reasons } = detectors.reduce((acc, detector) => {
-            acc.weightedSum += detector.score * detector.weight;
-            acc.totalWeight += detector.weight;
-            acc.reasons.push(...detector.reasons || []);
-            return acc;
-        }, { weightedSum: 0, totalWeight: 0, reasons: [] });
+        const { finalScore, reasons } = detectors.reduce((acc, detector) => {
+            acc.finalScore += detector.score * detector.weight;
+            
+            if (this._withReasons && detector.reasons) {
+                acc.reasons.push(...detector.reasons);
+            }
 
-        const finalScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
+            return acc;
+        }, { finalScore: 0, reasons: [] });
 
         return {
             score: Math.min(finalScore, 1),
-            reasons
+            reasons: this._withReasons ? reasons : undefined
         };
     }
 
     _detectSuspiciousFormsScore() {
         const forms = document.querySelectorAll("form");
         const currentHost = location.hostname.replace(/^www\./, "");
-        const baseDomain = (host) => host.split('.').slice(-2).join('.');
+        const baseDomain = (host) => host.split(".").slice(-2).join(".");
 
         let score = 0;
-        const reasons = [];
+        const reasons = this._withReasons ? [] : undefined;
 
         const suspiciousKeywords = ["login", "auth", "secure", "verify", "bank", "account"];
 
@@ -45,9 +53,8 @@ class StaticContentDetector {
                 const actionHost = formUrl.hostname.replace(/^www\./, "");
 
                 const isCrossDomain = actionHost !== currentHost;
-                const isSuspiciousSubdomain =
-                    baseDomain(currentHost) === baseDomain(actionHost) &&
-                    currentHost !== actionHost;
+                const isSuspiciousSubdomain = !isCrossDomain &&
+                    baseDomain(currentHost) === baseDomain(actionHost);
 
                 const hasPhishyKeywords = suspiciousKeywords.some((word) =>
                     formUrl.href.toLowerCase().includes(word)
@@ -55,17 +62,17 @@ class StaticContentDetector {
 
                 if (isCrossDomain) {
                     score += 0.6;
-                    reasons.push(`Form action points to different domain: ${actionHost}`);
+                    reasons?.push(`Form action points to cross-domain: ${actionHost}`);
                 }
 
                 if (isSuspiciousSubdomain) {
                     score += 0.2;
-                    reasons.push(`Suspicious subdomain in form action: ${actionHost}`);
+                    reasons?.push(`Form action on suspicious subdomain: ${actionHost}`);
                 }
 
                 if (hasPhishyKeywords) {
                     score += 0.2;
-                    reasons.push(`Form action contains phishing-related keyword(s)`);
+                    reasons?.push("Form action contains phishing-keyword(s)");
                 }
             } catch {
                 // Skip malformed URLs
@@ -78,7 +85,7 @@ class StaticContentDetector {
     _detectMismatchedLinkTextScore() {
         const links = document.querySelectorAll("a[href]");
         let suspiciousCount = 0;
-        const reasons = [];
+        const reasons = this._withReasons ? [] : undefined;
 
         const vagueTextList = [
             "click here", "login", "log in", "sign in", "verify", "update", "go", "submit", "continue"
@@ -101,28 +108,28 @@ class StaticContentDetector {
                 const match = text.match(domainPattern);
                 if (match && !href.includes(match[0]) && !text.includes("<")) { // Ensure text is not HTML
                     suspiciousCount++;
-                    reasons.push(`Domain mismatch: text "${text}" vs href "${href}"`);
+                    reasons?.push(`Domain mismatch: text "${text}" vs href "${href}"`);
                     return;
                 }
 
                 // Case 2: Vague text + external link
                 if (vagueTextList.includes(text) && isExternal) {
                     suspiciousCount++;
-                    reasons.push(`Vague CTA "${text}" points to external domain "${hrefUrl.hostname}"`);
+                    reasons?.push(`Vague CTA "${text}" points to external domain "${hrefUrl.hostname}"`);
                     return;
                 }
 
                 // Case 3: Link uses known shortener
-                if (shorteners.some(s => hrefUrl.hostname.includes(s))) {
+                if (shorteners.some(s => hrefUrl.hostname.toLowerCase() === s)) { // Use strict equality for exact match
                     suspiciousCount++;
-                    reasons.push(`Shortened URL detected: "${hrefUrl.hostname}"`);
+                    reasons?.push(`Shortened URL detected: "${hrefUrl.hostname}"`);
                     return;
                 }
 
                 // Case 4: Href uses raw IP address
                 if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(hrefUrl.hostname)) {
                     suspiciousCount++;
-                    reasons.push(`Link uses IP address instead of domain: "${hrefUrl.hostname}"`);
+                    reasons?.push(`Link uses IP address instead of domain: "${hrefUrl.hostname}"`);
                     return;
                 }
             } catch {
@@ -136,42 +143,67 @@ class StaticContentDetector {
         return { score, reasons };
     }
 
+    knownCdns = [
+        "static.wixstatic.com",
+        "cdn.shopify.com",
+        /(^|\.)amazonaws\.com$/i,
+        "fonts.gstatic.com",
+        "fonts.googleapis.com",
+        "cloudfront.net",
+        "akamaihd.net",
+        "jsdelivr.net",
+        "stackpathdns.com",
+        "cdn.jsdelivr.net",
+        "cloudflare.com",
+        "fbcdn.net",
+        "twimg.com",
+        "instagram.com",
+    ];
+
     _detectExternalLogosScore() {
-        const imgs = document.querySelectorAll("img");
-        const reasons = [];
-
+        const imgs = Array.from(document.querySelectorAll("img"));
+        const reasons = this._withReasons ? [] : undefined;
         const currentHost = location.hostname.replace(/^www\./, "");
+
+        const isWhitelisted = (host) =>
+            this.knownCdns.some(pattern =>
+                pattern instanceof RegExp ? pattern.test(host) : host === pattern
+            );
+
+        const logoImgs = imgs.filter(img => {
+            const src = img.getAttribute("src") || "";
+            const alt = img.getAttribute("alt") || "";
+            return /logo/i.test(src) || /logo/i.test(alt);
+        });
+
         let suspiciousCount = 0;
-
-        imgs.forEach((img) => {
-            const src = img.getAttribute("src");
-            if (!src || !src.match(/logo/i)) return;
-
+        logoImgs.forEach((img) => {
+            const src = img.getAttribute("src") || "";
             try {
                 const imgUrl = new URL(src, location.href);
                 const imgHost = imgUrl.hostname.replace(/^www\./, "");
 
-                if (imgHost !== currentHost) {
+                if (imgHost !== currentHost && !isWhitelisted(imgHost)) {
                     suspiciousCount++;
-                    reasons.push(`Logo image loaded from different domain: ${imgHost}`);
+                    reasons?.push(`Logo image loaded from different domain: ${imgHost}`);
                 }
             } catch {
-                // Ignore malformed URLs
+                // skip malformed URLs
             }
         });
 
-        const score = Math.min(suspiciousCount / (imgs.length || 1), 1);
+        const score = Math.min(suspiciousCount / (logoImgs.length || 1), 1);
         return { score, reasons };
     }
 
     _detectPasswordFieldsWithoutHTTPSScore() {
         const passwordInputs = document.querySelectorAll("input[type='password']");
-        const reasons = [];
+        const reasons = this._withReasons ? [] : undefined;
 
         const isHttp = location.protocol !== "https:";
 
         if (passwordInputs.length > 0 && isHttp) {
-            reasons.push("Page contains password field but is not served over HTTPS");
+            reasons?.push("Page contains password field but is not served over HTTPS");
             return { score: 1, reasons };
         }
 
@@ -180,21 +212,32 @@ class StaticContentDetector {
 
     _detectObfuscatedJavaScriptScore() {
         const scripts = document.querySelectorAll("script");
-        const reasons = [];
+        const reasons = this._withReasons ? [] : undefined;
 
         let suspiciousCount = 0;
 
-        scripts.forEach((script) => {
-            const text = script.innerText;
+        const combinedScriptText = Array.from(scripts).map(script => script.innerText).join("\n");
 
-            if (text.includes("eval(")) {
-                suspiciousCount++;
-                reasons.push("Use of eval() detected in inline JavaScript");
-            }
+        const patterns = [
+            { regex: /eval\(/, reason: "Use of eval() detected in inline JavaScript" },
+            { regex: /document\.write\(/, reason: "Use of document.write() detected in script" },
+            { regex: /new Function\(/, reason: "Use of new Function() detected in script" },
+            { regex: /atob\(|btoa\(/, reason: "Base64 encoding/decoding detected in script", countThreshold: 2 },
+            { regex: /setTimeout\(|setInterval\(/, reason: "Dynamic script injection using setTimeout or setInterval detected", countThreshold: 2 },
+            { regex: /<script.*?>.*?<\/script>/, reason: "Suspicious regular expressions targeting <script> tags detected" },
+            { regex: /(['"`][^'"`]*['"`])\s*\+\s*(['"`][^'"`]*['"`])/g, reason: "Excessive string concatenation detected in script", countThreshold: 5 },
+        ];
 
-            if (text.includes("document.write(")) {
-                suspiciousCount++;
-                reasons.push("Use of document.write() detected in script");
+        patterns.forEach(({ regex, reason, countThreshold }) => {
+            const matches = combinedScriptText.match(regex);
+            if (matches) {
+                if (countThreshold && matches.length > countThreshold) {
+                    suspiciousCount++;
+                    reasons?.push(reason);
+                } else if (!countThreshold) {
+                    suspiciousCount++;
+                    reasons?.push(reason);
+                }
             }
         });
 
@@ -204,10 +247,10 @@ class StaticContentDetector {
 
     _detectTooManyInputFieldsScore() {
         const inputs = document.querySelectorAll("input");
-        const reasons = [];
+        const reasons = this._withReasons ? [] : undefined;
 
         if (inputs.length > 10) {
-            reasons.push(`Page contains unusually many input fields (${inputs.length})`);
+            reasons?.push(`Page contains unusually many input fields (${inputs.length})`);
             return { score: 1, reasons };
         }
 
