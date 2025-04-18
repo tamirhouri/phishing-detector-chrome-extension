@@ -15,6 +15,8 @@ This project runs a phishing detection model using DOM content features, evaluat
 | `static_content_results.json` | Results saved from detection run |
 | `static_content_metrics.json` | Evaluation metrics (accuracy, precision, recall, etc.) |
 | `static_report.html`          | Clickable report for visual inspection |
+| `evaluate-roc-auc.js`             | Runs a ROC AUC test to determine the best threshold for classification |
+| `generate-roc-plot.js`        | Generates an HTML file to visualize the ROC curve using Chart.js |
 
 ---
 
@@ -30,6 +32,13 @@ Edit `urls.json` like this:
 
 ```json
 [
-  { "url": "https://example.com", "label": "safe" },
+  { "url": "https://example.com", "label": "benign" },
   { "url": "https://phishing.test", "label": "phishing" }
 ]
+```
+
+### 3. Run the file `setup-and-run.sh` with:
+
+```bash
+./setup-and-run.sh
+```
