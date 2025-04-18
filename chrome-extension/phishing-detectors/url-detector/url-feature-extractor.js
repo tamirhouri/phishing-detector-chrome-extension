@@ -1,166 +1,117 @@
 export class UrlFeaturesExtractor {
-  constructor(url) {
-    this.url = url;
-    this.urlObj = new URL(url);
-  }
+    static SHORTENING_SERVICES = new Set([
+        "bit.ly", "tinyurl.com", "goo.gl", "ow.ly", "t.co", "is.gd", "bitly.com",
+        "vzturl.com", "qr.net", "1url.com", "tweez.me", "v.gd", "tr.im", "link.zip.net",
+        "filoops.info"
+    ]);
 
-  // --------------------
-  // 🔐 Security Features
-  // --------------------
+    static SUSPICIOUS_WORDS = new Set([
+        "login", "verify", "account", "password", "bank", "secure",
+        "free", "lucky", "service", "bonus", "ebayisapi", "webscr",
+        "paypal", "signin", "update"
+    ]);
 
-  isHttps() {
-    return this.urlObj.protocol === 'https:' ? 1.0 : 0.0;
-  }
+    static UNCOMMON_TLDS = new Set([".tk", ".ml", ".ga", ".cf", ".gq"]);
 
-  // You'd need to fetch this data with `chrome.tabs.query` or a background fetch to check SSL cert.
-  hasSslCert() {
-    // Placeholder — would need actual implementation
-    return null;
-  }
-
-  usesSuspiciousTLD() {
-    const tld = this.urlObj.hostname.split('.').pop();
-    const badTLDs = ['tk', 'ml', 'ga', 'cf', 'gq'];
-    return badTLDs.includes(tld) ? 1.0 : 0.0;
-  }
-
-  usesIPAddress() {
-    return /^\d{1,3}(\.\d{1,3}){3}$/.test(this.urlObj.hostname) ? 1.0 : 0.0;
-  }
-
-  // ----------------------------
-  // 🧠 Lexical / Structural Features
-  // ----------------------------
-
-  urlLength() {
-    return this.url.length;
-  }
-
-  hostnameLength() {
-    return this.urlObj.hostname.length;
-  }
-
-  pathLength() {
-    return this.urlObj.pathname.length;
-  }
-
-  queryLength() {
-    return this.urlObj.search.length;
-  }
-
-  hashLength() {
-    return this.urlObj.hash.length;
-  }
-
-  dotCount() {
-    return (this.urlObj.hostname.match(/\./g) || []).length;
-  }
-
-  hyphenCount() {
-    return (this.urlObj.hostname.match(/-/g) || []).length;
-  }
-
-  hasAtSymbol() {
-    return this.url.includes('@') ? 1.0 : 0.0;
-  }
-
-  hasDoubleSlashInPath() {
-    return this.urlObj.pathname.includes('//') ? 1.0 : 0.0;
-  }
-
-  hasEquals() {
-    return this.url.includes('=') ? 1.0 : 0.0;
-  }
-
-  hasSemicolon() {
-    return this.url.includes(';') ? 1.0 : 0.0;
-  }
-
-  isShortened() {
-    const shorteners = ['bit.ly', 'tinyurl.com', 'goo.gl', 'ow.ly', 't.co'];
-    return shorteners.some(domain => this.urlObj.hostname.includes(domain)) ? 1.0 : 0.0;
-  }
-
-  // ---------------------
-  // 💬 Wordlist Features
-  // ---------------------
-
-  containsBrandName() {
-    const brands = ['paypal', 'facebook', 'google', 'apple', 'amazon', 'microsoft'];
-    return brands.some(name => this.url.toLowerCase().includes(name)) ? 1.0 : 0.0;
-  }
-
-  containsPhishyWords() {
-    const phishyWords = ['secure', 'account', 'login', 'update', 'verify', 'banking'];
-    return phishyWords.some(word => this.url.toLowerCase().includes(word)) ? 1.0 : 0.0;
-  }
-
-  looksLikeHex() {
-    return /[a-f0-9]{20,}/i.test(this.url) ? 1.0 : 0.0;
-  }
-
-  // --------------------
-  // 🔁 Domain Features
-  // --------------------
-
-  isKnownDomain() {
-    const whitelist = ['google.com', 'facebook.com', 'github.com']; // Extend as needed
-    return whitelist.some(domain => this.urlObj.hostname.endsWith(domain)) ? 1.0 : 0.0;
-  }
-
-  domainAge() {
-    // Requires WHOIS API — placeholder
-    return null;
-  }
-
-  // --------------------
-  // 🛠️ Extra Heuristics
-  // --------------------
-
-  hostnameEntropy() {
-    const str = this.urlObj.hostname;
-    const freq = {};
-    for (let char of str) {
-      freq[char] = (freq[char] || 0) + 1;
+    constructor(url) {
+        this.url = url;
+        this.urlObj = new URL(url);
     }
-    const len = str.length;
-    let entropy = 0;
-    for (let char in freq) {
-      const p = freq[char] / len;
-      entropy -= p * Math.log2(p);
+
+
+    getLength() {
+        return this.url.length;
     }
-    return entropy;
-  }
 
-  // Levenshtein distance would need to be computed manually or with a library
-  // Example: levenshtein(this.urlObj.hostname, 'paypal.com')
+    hyphenCount() {
+        return (this.urlObj.hostname.match(/-/g) || []).length;
+    }
 
-  // --------------------
-  // 🎯 Final: All Features Together
-  // --------------------
+    countSpecialChars() {
+        return ["@", "=", "&", "#", "?", "%", "+"].reduce((count, char) => count + (this.url.split(char).length - 1), 0);
+    }
 
-  extractAllFeatures() {
-    return {
-      isHttps: this.isHttps(),
-      usesSuspiciousTLD: this.usesSuspiciousTLD(),
-      usesIPAddress: this.usesIPAddress(),
-      urlLength: this.urlLength(),
-      hostnameLength: this.hostnameLength(),
-      pathLength: this.pathLength(),
-      queryLength: this.queryLength(),
-      hashLength: this.hashLength(),
-      dotCount: this.dotCount(),
-      hyphenCount: this.hyphenCount(),
-      hasAtSymbol: this.hasAtSymbol(),
-      hasDoubleSlashInPath: this.hasDoubleSlashInPath(),
-      hasEquals: this.hasEquals(),
-      hasSemicolon: this.hasSemicolon(),
-      isShortened: this.isShortened(),
-      containsBrandName: this.containsBrandName(),
-      containsPhishyWords: this.containsPhishyWords(),
-      looksLikeHex: this.looksLikeHex(),
-      isKnownDomain: this.isKnownDomain(),
-      hostnameEntropy: this.hostnameEntropy(),
-    };
-  }
+    portLength() {
+        return this.urlObj.port ? this.urlObj.port.length : 0;
+    }
+
+    hasRedirection() {
+        const strippedUrl = this.url.replace(/^https?:\/\//, "");
+        return strippedUrl.includes("//");
+    }
+
+    urlPathDepth() {
+        return this.urlObj.pathname.split("/").filter(part => part).length;
+    }
+
+    digitCount() {
+        return (this.url.match(/\d/g) || []).length;
+    }
+
+    hasShorteningService() {
+        const host = this.urlObj.hostname.toLowerCase();
+        return Array.from(UrlFeaturesExtractor.SHORTENING_SERVICES)
+            .some(service => host === service || host.endsWith("." + service));
+    }
+
+    hasIpAddress() {
+        const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+        return ipRegex.test(this.urlObj.hostname);
+    }
+
+    subdomainCount() {
+        if (this.hasIpAddress()) return 0.0;
+        const parts = this.urlObj.hostname.split(".");
+        return Math.max(0, parts.length - 2);
+    }
+
+    hasSuspiciousWords() {
+        return Array.from(UrlFeaturesExtractor.SUSPICIOUS_WORDS).some(word => this.url.toLowerCase().includes(word));
+    }
+
+    uncommonTld() {
+        return Array.from(UrlFeaturesExtractor.UNCOMMON_TLDS).some(tld => this.urlObj.hostname.endsWith(tld));
+    }
+
+    isHttps() {
+        return this.urlObj.protocol === 'https:';
+    }
+
+    hostnameLength() {
+        return this.urlObj.hostname.length;
+    }
+
+    pathLength() {
+        return this.urlObj.pathname.length;
+    }
+
+    queryLength() {
+        return this.urlObj.search.length;
+    }
+
+    dotCount() {
+        return (this.urlObj.hostname.match(/\./g) || []).length;
+    }
+
+    extractAllFeatures() {
+        return {
+            urlLength: parseFloat(+this.getLength()),
+            dotCount: parseFloat(+this.dotCount()),
+            hyphenCount: parseFloat(+this.hyphenCount()),
+            isHttps: parseFloat(+this.isHttps()),
+            hostnameLength: parseFloat(+this.hostnameLength()),
+            pathLength: parseFloat(+this.pathLength()),
+            queryLength: parseFloat(+this.queryLength()),
+            portLength: parseFloat(+this.portLength()),
+            hasRedirection: parseFloat(+this.hasRedirection()),
+            urlPathDepth: parseFloat(+this.urlPathDepth()),
+            digitCount: parseFloat(+this.digitCount()),
+            hasShorteningService: parseFloat(+this.hasShorteningService()),
+            hasIpAddress: parseFloat(+this.hasIpAddress()),
+            subdomainCount: parseFloat(+this.subdomainCount()),
+            hasSuspiciousWords: parseFloat(+this.hasSuspiciousWords()),
+            countSpecialChars: parseFloat(+this.countSpecialChars()),
+            uncommonTld: parseFloat(+this.uncommonTld())
+        };
+    }
 }

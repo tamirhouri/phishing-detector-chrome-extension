@@ -42,18 +42,26 @@ export class UrlDetector {
 
   extractFeatures(url) {
     const featuresExtractor = new UrlFeaturesExtractor(url);
+    const features = featuresExtractor.extractAllFeatures()
 
     return [
-      featuresExtractor.isHttps(),
-      featuresExtractor.usesSuspiciousTLD(),
-      featuresExtractor.usesIPAddress(),
-      featuresExtractor.urlLength(),
-      featuresExtractor.hostnameLength(),
-      featuresExtractor.pathLength(),
-      featuresExtractor.queryLength(),
-      featuresExtractor.hashLength(),
-      featuresExtractor.dotCount(),
-      featuresExtractor.hyphenCount(),
-    ];
+      features.urlLength,
+      features.dotCount,
+      features.hyphenCount,
+      features.isHttps,
+      features.hostnameLength,
+      features.pathLength,
+      features.queryLength,
+      features.portLength,
+      features.hasRedirection,
+      features.urlPathDepth,
+      features.digitCount,
+      features.hasShorteningService,
+      features.hasIpAddress,
+      features.subdomainCount,
+      features.hasSuspiciousWords,
+      features.countSpecialChars,
+      features.uncommonTld
+    ]
   }
 }

@@ -21,8 +21,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return;
         }
 
+        // TODO: REMOVE ALL PERFORMANCE RELATED LOGS
+        const startTime = performance.now();
         urlDetector.predict(message.url).then((score) => {
+            const endTime = performance.now();
             console.log("[background script] url-detector prediction score:", score);
+            console.log("[background script] URL prediction time:", endTime - startTime, "ms");
             sendResponse({ status: 'SUCCESS', score });
         }).catch((error) => {
             console.error('Error during prediction:', error);
