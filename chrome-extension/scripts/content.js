@@ -1,7 +1,27 @@
-const URL_PREDICTION_THRESHOLD = 0.5;
-const CONTENT_PREDICTION_THRESHOLD = 0.5;
-
 const staticContentDetector = new StaticContentDetector();
+const urlDetector = new UrlDetector();
+
+function logExecutionTime(fn, fnName) {
+  return async function(...args) {
+    const startTime = performance.now();
+    const result = await fn.apply(this, args);
+    const endTime = performance.now();
+    console.log(`[metrics] ${fnName} executed in ${(endTime - startTime).toFixed(2)} ms`);
+    return result;
+  };
+}
+
+// Wrapping the functions
+urlDetector.load = logExecutionTime(urlDetector.load, 'urlDetector.load');
+urlDetector.warmup = logExecutionTime(urlDetector.warmup, 'urlDetector.warmup');
+getUrlPrediction = logExecutionTime(getUrlPrediction, 'getUrlPrediction');
+getContentPrediction = logExecutionTime(getContentPrediction, 'getContentPrediction');
+
+
+(async function initialize() {
+  await urlDetector.load();
+  urlDetector.warmup();
+})();
 
 async function getContentPrediction() {
   console.log("[content script] Predicting content using StaticContentDetector")
@@ -17,8 +37,16 @@ async function getContentPrediction() {
 }
 
 async function getUrlPrediction() {
-  console.log("[content script] Sending PREDICT_URL message to background script")
-  return chrome.runtime.sendMessage({ action: 'PREDICT_URL', url: location.href });
+  console.log("[content script] Predicting URL using UrlDetector")
+  const prediction = urlDetector.predict();
+
+  if (prediction === null || prediction === undefined) {
+    console.error("[content script] Error during URL prediction.");
+    return { status: 'FAIL', error: 'URL prediction failed' };
+  }
+
+  console.log("[content script] URL prediction score:", prediction.score);
+  return { status: 'SUCCESS', ...prediction };
 }
 
 async function getPhishingPrediction() {
@@ -32,8 +60,8 @@ async function getPhishingPrediction() {
     return { isError: true, details: "Error retrieving predictions." };
   }
 
-  const isURL = urlPrediction.score > URL_PREDICTION_THRESHOLD;
-  const isContent = contentPrediction.score > CONTENT_PREDICTION_THRESHOLD
+  const isURL = urlPrediction.score > UrlDetector.PHISHING_THRESHOLD;
+  const isContent = contentPrediction.score > StaticContentDetector.PHISHING_THRESHOLD;
 
   const isPhishing = isURL || isContent;
 
