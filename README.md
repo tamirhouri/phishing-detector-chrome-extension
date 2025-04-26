@@ -33,12 +33,12 @@ A lightweight, **multi‑layered** browser extension that detects phishing attem
 
 ## 🛠️ How It Works
 1. **Content Script** injects into every page, extracts URL + DOM features.
-2. **Background Service Worker** loads the **TF.js model** (`phishing-detectors/url-detector/model.json`) via `chrome.runtime.getURL()`.
-3. Features are **standard‑scaled** on the fly using mean/σ saved during Python training.
-4. Prediction & heuristics are combined → result is sent back to the content script.
-5. **Popup UI** (React‑lite HTML/CSS) shows a green “Safe ✅” or red “Phishing ⚠️” banner with details.
+2. Features are **standard‑scaled** on the fly using mean/σ saved during Python training.
+3. Prediction & heuristics are combined → result is sent back to the popup script.
+4. **Popup UI** (HTML/CSS) shows a green “Safe ✅” or red “Phishing ⚠️” banner with details.
 
-![flow‑diagram](docs/architecture/flow.png)
+![image](https://github.com/user-attachments/assets/79d4a00d-9c4e-4585-a4d7-78cc0b6b527d)
+![image](https://github.com/user-attachments/assets/451d233b-fe6d-490f-9541-6ea6a8f51e70)
 
 ---
 
