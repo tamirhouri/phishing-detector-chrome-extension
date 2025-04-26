@@ -26,13 +26,11 @@ __pycache__/
 *.bak
 *.tmp
 
-# Static content detector evaluation
-static-content-detector-evaluation/static_content_metrics.json
-static-content-detector-evaluation/static_content_results.json
-static-content-detector-evaluation/static_report.html
-static-content-detector-evaluation/static_roc_auc_results.json
-static-content-detector-evaluation/static_roc_curve_data.json
-static-content-detector-evaluation/static_roc_plot.html
+
+# Detectors evaluation
+detectors-evaluation/data/
+detectors-evaluation/generated/
+
 
 # URL detector model
 # url-detector-model/*.bin
