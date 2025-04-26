@@ -29,7 +29,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "phishing-detectors/static-content-detector/static-content-detector-lr.json",
         "phishing-detectors/url-detector/model.json",
         "phishing-detectors/url-detector/group1-shard1of1.bin"
       ],
