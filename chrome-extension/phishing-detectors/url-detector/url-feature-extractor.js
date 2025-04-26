@@ -107,13 +107,44 @@ class UrlFeaturesExtractor {
     return tokens.filter((token) => !!token).length;
   }
 
+  mainDomainLength() {
+    const hostname = this.urlObj.hostname.toLowerCase();
+    let parts = hostname.split('.');
+
+    // Remove 'www' if present
+    if (parts.length > 0 && parts[0] === 'www') {
+      parts = parts.slice(1);
+    }
+
+    // Try longest match to known suffix
+    let domainIndex = parts.length - 2;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const possibleSuffix = parts.slice(i).join('.');
+      if (UrlFeaturesExtractor.PUBLIC_SUFFIXES.includes(possibleSuffix)) {
+        domainIndex = i - 1;
+        break;
+      }
+    }
+
+    if (domainIndex >= 0) {
+      return parts[domainIndex].length;
+    }
+    return 0;
+  }
+
+  isHttps() {
+    return this.url.startsWith('https');
+  }
+
   extractAllFeatures() {
     return {
       urlLength: parseFloat(+this.getLength()),
       subdomainLength: parseFloat(+this.subdomainLength()),
+      mainDomainLength: parseFloat(+this.mainDomainLength()),
       dotCount: parseFloat(+this.dotCount()),
       hyphenCount: parseFloat(+this.hyphenCount()),
       pathLength: parseFloat(+this.pathLength()),
+      isHttps: parseFloat(+this.isHttps()),
       queryLength: parseFloat(+this.queryLength()),
       hasRedirection: parseFloat(+this.hasRedirection()),
       urlPathDepth: parseFloat(+this.urlPathDepth()),
@@ -219,5 +250,30 @@ class UrlFeaturesExtractor {
     'yahoo',
     'proton',
     'adobe',
+  ];
+
+  static PUBLIC_SUFFIXES = [
+    'co.uk',
+    'ac.uk',
+    'gov.uk',
+    'org.uk',
+    'co.il',
+    'org.il',
+    'ac.il',
+    'gov.il',
+    'co.in',
+    'org.in',
+    'ac.in',
+    'gov.in',
+    'com.au',
+    'gov.au',
+    'edu.au',
+    'com.cn',
+    'gov.cn',
+    'edu.cn',
+    'net.cn',
+    'co.za',
+    'org.za',
+    'gov.za',
   ];
 }

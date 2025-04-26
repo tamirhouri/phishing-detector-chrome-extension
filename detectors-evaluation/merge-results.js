@@ -20,6 +20,7 @@ files.forEach((file) => {
   const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   mergedResults = mergedResults.concat(data);
 
+  console.log(`Merged ${file} into results.json`);
   // Delete the file after merging
   // fs.unlinkSync(filePath);
 });

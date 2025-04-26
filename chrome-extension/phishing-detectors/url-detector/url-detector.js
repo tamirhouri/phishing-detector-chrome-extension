@@ -65,9 +65,11 @@ class UrlDetector {
     return [
       features.urlLength,
       features.subdomainLength,
+      features.mainDomainLength,
       features.dotCount,
       features.hyphenCount,
       features.pathLength,
+      features.isHttps,
       features.queryLength,
       features.hasRedirection,
       features.urlPathDepth,

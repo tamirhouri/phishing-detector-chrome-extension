@@ -1,3 +1,10 @@
+const DEBUG = true; // Set to false in production
+
+if (!DEBUG) {
+  // Disable all logging in production
+  console.log = function () {};
+}
+
 async function getCurrentTab() {
   // can use also: chrome.tabs.query({ active: true, currentWindow: true })
   let queryOptions = { active: true, lastFocusedWindow: true };
