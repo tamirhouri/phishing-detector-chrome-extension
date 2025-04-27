@@ -347,9 +347,9 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
 // Evaluate 1000 URLs at a time for 10 iterations
 
 const batchSize = 1000;
-const iterations = 20;
+const iterations = 40;
 
-for (let i = 10; i < iterations; i++) {
+for (let i = 30; i < iterations; i++) {
   const fromRecId = i * batchSize + 1;
   const toRecId = (i + 1) * batchSize;
   console.log(`🔄 Evaluating URLs from ${fromRecId} to ${toRecId}`);
