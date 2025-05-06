@@ -14,6 +14,12 @@ async function generateRocPlot() {
   const urlBestTh = JSON.parse(
     await fs.readFile('./generated/url_roc_auc_results.json', 'utf-8')
   );
+  const combinedRoc = JSON.parse(
+    await fs.readFile('./generated/combined_roc_curve_data.json', 'utf-8')
+  );
+  const combinedBestTh = JSON.parse(
+    await fs.readFile('./generated/combined_roc_auc_results.json', 'utf-8')
+  );
 
   const staticContentData = {
     x: staticContentRoc.map((point) => point.fpr),
@@ -29,6 +35,14 @@ async function generateRocPlot() {
     type: 'scatter',
     mode: 'lines+markers',
     name: 'URL Detector',
+  };
+
+  const combinedData = {
+    x: combinedRoc.map((point) => point.fpr),
+    y: combinedRoc.map((point) => point.tpr),
+    type: 'scatter',
+    mode: 'lines+markers',
+    name: 'Combined Results',
   };
 
   const diagonalLine = {
@@ -52,9 +66,10 @@ async function generateRocPlot() {
 
   const staticContentAUC = calculateAUC(staticContentData.x, staticContentData.y);
   const urlAUC = calculateAUC(urlData.x, urlData.y);
+  const combinedAUC = calculateAUC(combinedData.x, combinedData.y);
 
   const layout = {
-    title: `ROC Curve (Static Content AUC: ${staticContentAUC.toFixed(4)}, URL AUC: ${urlAUC.toFixed(4)})`,
+    title: `ROC Curve (Static Content AUC: ${staticContentAUC.toFixed(4)}, URL AUC: ${urlAUC.toFixed(4)}), Combined AUC: ${combinedAUC.toFixed(4)}`,
     xaxis: { title: 'False Positive Rate (FPR)' },
     yaxis: { title: 'True Positive Rate (TPR)' },
   };
@@ -77,7 +92,16 @@ async function generateRocPlot() {
     marker: { color: 'blue', size: 10 }
   };
 
-  const data = [staticContentData, urlData, diagonalLine, bestThresholdPointStatic, bestThresholdPointUrl];
+  const bestThresholdPointCombined = {
+    x: [combinedBestTh.fpr],
+    y: [combinedBestTh.tpr],
+    type: 'scatter',
+    mode: 'markers',
+    name: 'Best Threshold (Combined)',
+    marker: { color: 'green', size: 10 }
+  };
+
+  const data = [staticContentData, urlData, combinedData, diagonalLine, bestThresholdPointStatic, bestThresholdPointUrl, bestThresholdPointCombined];
 
   // Generate the plot and save it as an HTML file
   const htmlContent = `<!DOCTYPE html>

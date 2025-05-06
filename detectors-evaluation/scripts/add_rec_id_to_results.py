@@ -2,9 +2,9 @@ import csv
 import json
 
 # Paths to the files
-json_file_path = "detectors-evaluation/generated/results.json"
-csv_file_path = "detectors-evaluation/data/index.csv"
-output_file_path = "detectors-evaluation/generated/results_with_rec_id.json"
+json_file_path = "../generated/results.json"
+csv_file_path = "../data/index.csv"
+output_file_path = "../generated/results_with_rec_id.json"
 
 # Load the JSON data
 with open(json_file_path, "r") as json_file:

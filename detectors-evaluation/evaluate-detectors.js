@@ -6,10 +6,6 @@ import csv from 'csv-parser';
 import http from 'http';
 import getPort from 'get-port';
 
-// Set global thresholds for classification
-const CLASSIFICATION_THRESHOLD = 0.5;
-const URL_CLASSIFICATION_THRESHOLD = 0.5;
-
 // Variable to control how the model and weights are loaded
 const USE_HTTP_SERVER_FOR_MODEL = true; // Default: true, can be overridden
 
@@ -140,10 +136,7 @@ const datasetFolders = [
 
 // Load websites_with_errors.json
 const websitesWithErrors = JSON.parse(
-  await fsPromises.readFile(
-    './generated/websites_with_errors.json',
-    'utf-8'
-  )
+  await fsPromises.readFile('./generated/websites_with_errors.json', 'utf-8')
 );
 
 // Create a set of skipRecIds
@@ -163,7 +156,6 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
   });
 
   for (const { rec_id, url, website, label, created_date } of filteredUrls) {
-
     console.log(
       `Processing record: rec_id=${rec_id}, url=${url}, website=${website}, label=${label}, created_date=${created_date}`
     );
@@ -204,13 +196,15 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
       browser = await puppeteer.launch();
       const page = await browser.newPage();
 
-      // Add a listener to capture console logs from the browser context
+      // // Add a listener to capture console logs from the browser context
       // page.on('console', (msg) => {
-      //     const message = msg.text();
-      //     console.log(`[Browser Console] ${message}`);
+      //   const message = msg.text();
+      //   console.log(`[Browser Console] ${message}`);
       // });
 
-      console.log(`🔍 ${rec_id} Testing URL: ${url} (htmlFilePath: ${htmlFilePath})`);
+      console.log(
+        `🔍 ${rec_id} Testing URL: ${url} (htmlFilePath: ${htmlFilePath})`
+      );
       await page.goto(`file://${path.resolve(htmlFilePath)}`, {
         waitUntil: 'domcontentloaded',
         timeout: 5000,
@@ -224,8 +218,9 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
         async (url, useHttpServer, port) => {
           try {
             console.log('ℹ️ Initializing StaticContentDetector...');
-            const staticContentDetector =
-              new StaticContentDetector().withReasons().withFeatures();
+            const staticContentDetector = new StaticContentDetector()
+              .withReasons()
+              .withFeatures();
             const staticContentResult = staticContentDetector.predict();
             console.log(
               '✅ StaticContentDetector initialized and prediction made.'
@@ -263,7 +258,53 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
               )}`
             );
 
-            return { staticContentResult, urlResult };
+            const COMBINED_LR_PARAMS = {
+              weights: [4.9935, 3.1742],
+              bias: -4.4864,
+              PHISHING_THRESHOLD: 0.5,
+            };
+
+            const isUrlPhishing = urlResult?.score
+              ? urlResult.score > UrlDetector.PHISHING_THRESHOLD
+              : undefined;
+
+            const isStaticContentPhishing = staticContentResult?.score
+              ? staticContentResult?.score >
+                StaticContentDetector.PHISHING_THRESHOLD
+              : undefined;
+
+            const sigmoid = (x) => {
+              return 1 / (1 + Math.exp(-x));
+            };
+
+            const combinedScore =
+              urlResult?.score && staticContentResult?.score
+                ? sigmoid(
+                    COMBINED_LR_PARAMS.weights[0] * urlResult.score +
+                      COMBINED_LR_PARAMS.weights[1] *
+                        staticContentResult.score +
+                      COMBINED_LR_PARAMS.bias
+                  )
+                : undefined;
+
+            const isCombinedPhishing = combinedScore
+              ? combinedScore > COMBINED_LR_PARAMS.PHISHING_THRESHOLD
+              : undefined;
+
+            const isPhishing =
+              isUrlPhishing === isStaticContentPhishing
+                ? isUrlPhishing
+                : isCombinedPhishing;
+
+            return {
+              staticContentResult,
+              urlResult,
+              isStaticContentPhishing,
+              isUrlPhishing,
+              combinedScore,
+              isCombinedPhishing,
+              isPhishing,
+            };
           } catch (error) {
             console.error(
               '❌ Error during evaluation in page context:',
@@ -288,40 +329,41 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
         staticContentScore: predictions.staticContentResult?.score,
         staticContentReasons: predictions.staticContentResult?.reasons,
         staticContentFeatures: predictions.staticContentResult?.features,
+        isStaticContentPhishing:
+          predictions.isStaticContentPhishing ?? undefined,
         urlScore: predictions.urlResult?.score,
+        isUrlPhishing: predictions.isUrlPhishing ?? undefined,
+        combinedScore: predictions.combinedScore ?? undefined,
+        isCombinedPhishing: predictions.isCombinedPhishing ?? undefined,
+        isPhishing: predictions.isPhishing ?? undefined,
         label: label === '1' ? 'phishing' : 'benign',
       };
 
       results.push(result);
-
-      // Update the log to include classification and emoji based on correctness
-      const isPhishing = label === '1';
-      const isStaticContentPhishing =
-        predictions.staticContentResult?.score > CLASSIFICATION_THRESHOLD;
-      const isUrlPhishing =
-        predictions.urlResult?.score > URL_CLASSIFICATION_THRESHOLD;
 
       const getLabel = (classification) => {
         return classification ? 'phishing' : 'benign';
       };
 
       const getEmoji = (classification) => {
-        return classification === isPhishing ? '✅' : '⚠️';
+        return classification === (label === '1') ? '✅' : '⚠️';
       };
 
       console.log(
-        `${getEmoji(isStaticContentPhishing)} StaticContentDetector → Score: ${
+        `${getEmoji(
+          predictions.isStaticContentPhishing
+        )} StaticContentDetector → Score: ${
           predictions.staticContentResult?.score
         } Classification: ${getLabel(
-          isStaticContentPhishing
-        )} Label: ${getLabel(isPhishing)}`
+          predictions.isStaticContentPhishing
+        )} Label: ${getLabel(label === '1')}`
       );
       console.log(
-        `${getEmoji(isUrlPhishing)} UrlDetector → Score: ${
+        `${getEmoji(predictions.isUrlPhishing)} UrlDetector → Score: ${
           predictions.urlResult?.score
-        } Classification: ${getLabel(isUrlPhishing)} Label: ${getLabel(
-          isPhishing
-        )}`
+        } Classification: ${getLabel(
+          predictions.isUrlPhishing
+        )} Label: ${getLabel(label === '1')}`
       );
     } catch (error) {
       console.error(`❌ Failed for ${url}: ${error.message}`);
@@ -343,13 +385,12 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
   console.log('✅ Evaluation completed. Exiting process.');
 }
 
-
 // Evaluate 1000 URLs at a time for 10 iterations
 
 const batchSize = 1000;
-const iterations = 60;
+const iterations = 70;
 
-for (let i = 50; i < iterations; i++) {
+for (let i = 60; i < iterations; i++) {
   const fromRecId = i * batchSize + 1;
   const toRecId = (i + 1) * batchSize;
   console.log(`🔄 Evaluating URLs from ${fromRecId} to ${toRecId}`);

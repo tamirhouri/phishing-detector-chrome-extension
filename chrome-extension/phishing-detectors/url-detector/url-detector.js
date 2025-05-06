@@ -1,6 +1,5 @@
 class UrlDetector {
-
-  static PHISHING_THRESHOLD = 0.5;
+  static PHISHING_THRESHOLD = 0.33;
 
   constructor() {
     this.model = null;
@@ -70,14 +69,11 @@ class UrlDetector {
       features.hyphenCount,
       features.pathLength,
       features.isHttps,
-      features.queryLength,
-      features.hasRedirection,
       features.urlPathDepth,
       features.digitCount,
       features.tokenCount,
       features.encodedCharCount,
       features.hasShorteningService,
-      features.hasIpAddress,
       features.subdomainCount,
       features.uncommonTld,
       features.hasSuspiciousWords,

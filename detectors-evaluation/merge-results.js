@@ -11,7 +11,7 @@ const directoryPath = path.join(__dirname, 'generated');
 const outputFilePath = path.join(directoryPath, 'results.json');
 
 // Get all JSON files in the directory matching the pattern
-const files = fs.readdirSync(directoryPath).filter(file => file.match(/^results-\d+-\d+\.json$/));
+const files = fs.readdirSync(directoryPath).filter(file => file.match(/^t-results-\d+-\d+\.json$/));
 
 let mergedResults = [];
 

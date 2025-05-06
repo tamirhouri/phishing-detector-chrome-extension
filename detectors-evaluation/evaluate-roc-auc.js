@@ -40,14 +40,22 @@ async function runRocAucTest() {
     const urlYTrue = results.map(r => r.label === 'phishing' ? 1 : 0);
     const urlYScores = results.map(r => r.urlScore || 0);
 
+    const combinedYTrue = results.map(r => r.label === 'phishing' ? 1 : 0);
+    const combinedYScores = results.map(r => r.combinedScore || 0);
+
     const staticContentRocCurve = getRocCurve(staticContentYTrue, staticContentYScores);
     const urlRocCurve = getRocCurve(urlYTrue, urlYScores);
+    const combinedRocCurve = getRocCurve(combinedYTrue, combinedYScores);
 
     const staticContentBest = staticContentRocCurve.reduce((best, current) => {
         return current.accuracy > best.accuracy ? current : best;
     }, { accuracy: 0 });
 
     const urlBest = urlRocCurve.reduce((best, current) => {
+        return current.accuracy > best.accuracy ? current : best;
+    }, { accuracy: 0 });
+
+    const combinedBest = combinedRocCurve.reduce((best, current) => {
         return current.accuracy > best.accuracy ? current : best;
     }, { accuracy: 0 });
 
@@ -60,11 +68,19 @@ async function runRocAucTest() {
         TP: ${urlBest.tp}, FP: ${urlBest.fp}, TN: ${urlBest.tn}, FN: ${urlBest.fn}
         Precision: ${urlBest.precision}, Recall: ${urlBest.recall}, F1: ${urlBest.f1}`);
 
+    console.log(`Combined Results -
+        Best Threshold: ${combinedBest.threshold}, Best Accuracy: ${combinedBest.accuracy}
+        TP: ${combinedBest.tp}, FP: ${combinedBest.fp}, TN: ${combinedBest.tn}, FN: ${combinedBest.fn}
+        Precision: ${combinedBest.precision}, Recall: ${combinedBest.recall}, F1: ${combinedBest.f1}`);
+
     await fs.writeFile('./generated/content_roc_auc_results.json', JSON.stringify(staticContentBest, null, 2));
     await fs.writeFile('./generated/url_roc_auc_results.json', JSON.stringify(urlBest, null, 2));
 
     await fs.writeFile('./generated/content_roc_curve_data.json', JSON.stringify(staticContentRocCurve, null, 2));
     await fs.writeFile('./generated/url_roc_curve_data.json', JSON.stringify(urlRocCurve, null, 2));
+
+    await fs.writeFile('./generated/combined_roc_auc_results.json', JSON.stringify(combinedBest, null, 2));
+    await fs.writeFile('./generated/combined_roc_curve_data.json', JSON.stringify(combinedRocCurve, null, 2));
 
     console.log('ROC AUC results and curve data saved for both detectors.');
 }

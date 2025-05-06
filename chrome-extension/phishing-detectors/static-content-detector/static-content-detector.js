@@ -1,4 +1,5 @@
 const sigmoid = (z) => 1 / (1 + Math.exp(-z));
+
 class StaticContentDetector {
   static LR_PARAMS = {
     bias: -2.2398080593777188,
@@ -8,7 +9,7 @@ class StaticContentDetector {
     ],
   };
 
-  static PHISHING_THRESHOLD = 0.5;
+  static PHISHING_THRESHOLD = 0.34281203833795315;
 
   constructor(_withReasons = false, _withFeatures = false) {}
 

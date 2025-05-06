@@ -28,10 +28,17 @@ const urlBestMetrics = await safeReadFile(
 const urlRocCurveData = await safeReadFile(
   './generated/url_roc_curve_data.json'
 );
+const combinedBestMetrics = await safeReadFile(
+  './generated/combined_roc_auc_results.json'
+);
+const combinedRocCurveData = await safeReadFile(
+  './generated/combined_roc_curve_data.json'
+);
 
 // Declare urlThreshold and contentThreshold at the top level to ensure they are accessible globally
 let urlThreshold = urlBestMetrics.threshold;
 let contentThreshold = contentBestMetrics.threshold;
+let combinedThreshold = combinedBestMetrics.threshold;
 
 // Replace the problematic string with a safe representation
 const sanitizeString = (str) => {
@@ -85,6 +92,9 @@ const html = `
   <script>
     const urlRocCurveData = ${JSON.stringify(urlRocCurveData)};
     const contentRocCurveData = ${JSON.stringify(contentRocCurveData)};
+    const combinedRocCurveData = ${JSON.stringify(
+      combinedRocCurveData
+    )};
 
     function getMetricsForThreshold(data, threshold) {
       // Find the entry in the data that matches the given threshold
@@ -191,6 +201,23 @@ const html = `
     <li><strong>Best Accuracy:</strong> ${
       contentBestMetrics.accuracy
     } at <strong>Threshold:</strong> ${contentBestMetrics.threshold}</li>
+  </ul>
+
+  <h2>📊 Combined Metrics</h2>
+  <ul>
+    <li><strong>Accuracy:</strong> <span id="combined-accuracy">${
+      combinedBestMetrics.accuracy
+    }</span></li>
+    <li><strong>Precision:</strong> <span id="combined-precision">${
+      combinedBestMetrics.precision
+    }</span></li>
+    <li><strong>Recall:</strong> <span id="combined-recall">${
+      combinedBestMetrics.recall
+    }</span></li>
+    <li><strong>F1 Score:</strong> <span id="combined-f1">${
+      combinedBestMetrics.f1
+    }</span></li>
+    <li><strong>Threshold:</strong> ${combinedBestMetrics.threshold}</li>
   </ul>
 
 
