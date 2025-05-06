@@ -23,17 +23,6 @@ class StaticContentDetector {
     return this;
   }
 
-  _predictRaw() {
-    return [
-      this._detectSuspiciousFormsScore(),
-      this._detectPasswordFieldsWithoutHTTPSScore(),
-      this._detectMismatchedLinkTextScore(),
-      this._detectObfuscatedJavaScriptScore(),
-      this._detectExternalLogosScore(),
-      this._detectTooManyInputFieldsScore(),
-    ];
-  }
-
   predict() {
     const detectors = this._predictRaw();
     const features = detectors.map((d) => d.score);
@@ -50,6 +39,17 @@ class StaticContentDetector {
         : undefined,
       features: this._withFeatures ? features : undefined,
     };
+  }
+
+  _predictRaw() {
+    return [
+      this._detectSuspiciousFormsScore(),
+      this._detectPasswordFieldsWithoutHTTPSScore(),
+      this._detectMismatchedLinkTextScore(),
+      this._detectObfuscatedJavaScriptScore(),
+      this._detectExternalLogosScore(),
+      this._detectTooManyInputFieldsScore(),
+    ];
   }
 
   _detectSuspiciousFormsScore() {
@@ -99,9 +99,7 @@ class StaticContentDetector {
           score += 0.2;
           reasons?.push('Form action contains phishing-keyword(s)');
         }
-      } catch {
-        // Skip malformed URLs
-      }
+      } catch {}
     });
 
     return { score: Math.min(score, 1), reasons };
@@ -137,16 +135,13 @@ class StaticContentDetector {
         const hrefUrl = new URL(href, location.href);
         const isExternal = hrefUrl.hostname !== location.hostname;
 
-        // Case 1: Mismatched visible domain vs. actual link
         const match = text.match(domainPattern);
         if (match && !href.includes(match[0]) && !text.includes('<')) {
-          // Ensure text is not HTML
           suspiciousCount++;
           reasons?.push(`Domain mismatch: text "${text}" vs href "${href}"`);
           return;
         }
 
-        // Case 2: Vague text + external link
         if (vagueTextList.includes(text) && isExternal) {
           suspiciousCount++;
           reasons?.push(
@@ -155,15 +150,12 @@ class StaticContentDetector {
           return;
         }
 
-        // Case 3: Link uses known shortener
         if (shorteners.some((s) => hrefUrl.hostname.toLowerCase() === s)) {
-          // Use strict equality for exact match
           suspiciousCount++;
           reasons?.push(`Shortened URL detected: "${hrefUrl.hostname}"`);
           return;
         }
 
-        // Case 4: Href uses raw IP address
         if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(hrefUrl.hostname)) {
           suspiciousCount++;
           reasons?.push(
@@ -171,9 +163,7 @@ class StaticContentDetector {
           );
           return;
         }
-      } catch {
-        // Ignore invalid links
-      }
+      } catch {}
     });
 
     const total = links.length || 1;
@@ -226,9 +216,7 @@ class StaticContentDetector {
           suspiciousCount++;
           reasons?.push(`Logo image loaded from different domain: ${imgHost}`);
         }
-      } catch {
-        // skip malformed URLs
-      }
+      } catch {}
     });
 
     const score = Math.min(suspiciousCount / (logoImgs.length || 1), 1);

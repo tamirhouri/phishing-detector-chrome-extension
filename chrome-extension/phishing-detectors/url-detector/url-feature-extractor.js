@@ -1,7 +1,7 @@
 class UrlFeaturesExtractor {
   constructor(url) {
     this.url = url;
-    this.urlObj = new URL(/^https?:\/\//i.test(url) ? url : 'http://' + url); // Prepend 'http://' if the URL does not have a protocol
+    this.urlObj = new URL(/^https?:\/\//i.test(url) ? url : 'http://' + url);
   }
 
   getLength() {
@@ -82,17 +82,14 @@ class UrlFeaturesExtractor {
     const hostname = this.urlObj.hostname.toLowerCase();
     let parts = hostname.split('.');
 
-    // Remove 'www' if present
     if (parts.length > 0 && parts[0] === 'www') {
       parts = parts.slice(1);
     }
 
-    // Must have at least 2 parts to exclude TLD
     if (parts.length <= 1) {
       return 0;
     }
 
-    // Exclude the last part (TLD), keep the rest
     const domainParts = parts.slice(0, -1);
 
     return domainParts.reduce((sum, part) => sum + part.length, 0);
@@ -111,12 +108,10 @@ class UrlFeaturesExtractor {
     const hostname = this.urlObj.hostname.toLowerCase();
     let parts = hostname.split('.');
 
-    // Remove 'www' if present
     if (parts.length > 0 && parts[0] === 'www') {
       parts = parts.slice(1);
     }
 
-    // Try longest match to known suffix
     let domainIndex = parts.length - 2;
     for (let i = 0; i < parts.length - 1; i++) {
       const possibleSuffix = parts.slice(i).join('.');

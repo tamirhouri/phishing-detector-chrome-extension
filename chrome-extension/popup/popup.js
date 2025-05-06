@@ -1,27 +1,3 @@
-const DEBUG = true; // Set to false in production
-
-function logExecutionTime(fn, fnName) {
-  return async function (...args) {
-    const startTime = performance.now();
-    const result = await fn.apply(this, args);
-    const endTime = performance.now();
-    console.log(
-      `[metrics] ${fnName} executed in ${(endTime - startTime).toFixed(2)} ms`
-    );
-    return result;
-  };
-}
-
-if (DEBUG) {
-  handlePhishingPrediction = logExecutionTime(
-    handlePhishingPrediction,
-    'handlePhishingPrediction'
-  );
-} else {
-  // Disable all logging in production
-  console.log = function () {};
-}
-
 async function getCurrentTab() {
   let queryOptions = { active: true, lastFocusedWindow: true };
   let [tab] = await chrome.tabs.query(queryOptions);
@@ -102,16 +78,10 @@ async function handlePhishingPrediction() {
     return;
   }
 
-  console.log(
-    '[popup script] GET_PREDICTION message sent to content script with currentTabId',
-    currentTab.id
-  );
-
   chrome.tabs.sendMessage(
     currentTab.id,
     { action: 'GET_PREDICTION' },
     (response) => {
-      console.log('[popup script] GET_PREDICTION response received', response);
       if (chrome.runtime.lastError) {
         updateExtensionElementError(chrome.runtime.lastError.message);
         return;

@@ -10,19 +10,13 @@ class UrlDetector {
       const url =
         modelUrl ||
         chrome.runtime.getURL('phishing-detectors/url-detector/model.json');
-      console.log(`[url detector class] Loading model from: ${url}`);
       this.model = await tf.loadGraphModel(url);
-      console.log('[url detector class] Model loaded successfully');
     } catch (error) {
       console.error('[url detector class] Error loading model:', error);
     }
   }
 
   warmup() {
-    if (!this.model) {
-      console.error('[url detector class] Model is not loaded');
-      return;
-    }
     try {
       const dummyFeatures = this.extractFeatures('www.dummy.com');
       const dummyInput = tf.tensor2d(dummyFeatures, [1, dummyFeatures.length]);
@@ -33,13 +27,6 @@ class UrlDetector {
   }
 
   predict(url = location.href) {
-    console.log(`[url detector class] Predicting URL: ${url}`);
-
-    if (!this.model) {
-      console.error('[url detector class] Model is not loaded');
-      return null;
-    }
-
     try {
       const features = this.extractFeatures(url);
       const input = tf.tensor2d(features, [1, features.length]);
