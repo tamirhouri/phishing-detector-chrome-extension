@@ -1,4 +1,4 @@
-class UrlFeaturesExtractor {
+export class UrlFeaturesExtractor {
   constructor(url) {
     this.url = url;
     this.urlObj = new URL(/^https?:\/\//i.test(url) ? url : 'http://' + url);

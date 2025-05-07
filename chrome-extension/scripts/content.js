@@ -13,11 +13,6 @@ if (DEBUG) {
     };
   }
 
-  urlDetector.load = logExecutionTime(urlDetector.load, 'urlDetector.load');
-  urlDetector.warmup = logExecutionTime(
-    urlDetector.warmup,
-    'urlDetector.warmup'
-  );
   getUrlPrediction = logExecutionTime(getUrlPrediction, 'getUrlPrediction');
   getContentPrediction = logExecutionTime(
     getContentPrediction,
@@ -25,19 +20,8 @@ if (DEBUG) {
   );
 }
 
-COMBINED_LR_PARAMS = {
-  weights: [5.6314, 4.6967],
-  bias: -3.2016,
-  PHISHING_THRESHOLD: 0.4766,
-};
-
 const staticContentDetector = new StaticContentDetector();
-const urlDetector = new UrlDetector();
-
-(async function initialize() {
-  await urlDetector.load();
-  urlDetector.warmup();
-})();
+const stackedPhishingClassifier = new StackedPhishingClassifier();
 
 async function getContentPrediction() {
   const prediction = staticContentDetector.predict();
@@ -51,14 +35,14 @@ async function getContentPrediction() {
 }
 
 async function getUrlPrediction() {
-  const prediction = urlDetector.predict();
-
-  if (prediction === null || prediction === undefined) {
-    console.error('[content script] Error during URL prediction.');
-    return { status: 'FAIL', error: 'URL prediction failed' };
-  }
-
-  return { status: 'SUCCESS', ...prediction };
+  return chrome.runtime
+    .sendMessage({ action: 'PREDICT_URL', url: location.href })
+    .then((prediction) => {
+      if (prediction.status === 'FAIL') {
+        console.error('[content script] Error during URL prediction.');
+      }
+      return prediction;
+    });
 }
 
 async function getPhishingPrediction() {
@@ -71,32 +55,29 @@ async function getPhishingPrediction() {
     return { isError: true, details: 'Error retrieving predictions.' };
   }
 
-  const isURL = urlPrediction.score > UrlDetector.PHISHING_THRESHOLD;
-  const isContent =
-    contentPrediction.score > StaticContentDetector.PHISHING_THRESHOLD;
-
-  const combinedScore = sigmoid(
-    COMBINED_LR_PARAMS.weights[0] * urlPrediction.score +
-      COMBINED_LR_PARAMS.weights[1] * contentPrediction.score +
-      COMBINED_LR_PARAMS.bias
+  const stackedPrediction = stackedPhishingClassifier.predict(
+    urlPrediction,
+    contentPrediction
   );
 
-  const isCombinedPhishing =
-    combinedScore > COMBINED_LR_PARAMS.PHISHING_THRESHOLD;
+  const isPhishing =
+    urlPrediction.verdict === contentPrediction.verdict
+      ? urlPrediction.verdict
+      : stackedPrediction.verdict;
 
-  const isPhishing = isURL === isContent ? isURL : isCombinedPhishing;
+  const details = isPhishing
+    ? 'This page may be a phishing attempt.'
+    : 'This page seems safe.';
 
   return {
-    isURL,
+    isURL: urlPrediction.verdict,
     urlPredictionScore: urlPrediction.score,
-    isContent,
+    isContent: contentPrediction.verdict,
     contentPredictionScore: contentPrediction.score,
-    isCombinedPhishing,
-    combinedScore,
+    isStackedPhishing: stackedPrediction.verdict,
+    stackedScore: stackedPrediction.score,
     isPhishing,
-    details: isPhishing
-      ? 'This page may be a phishing attempt.'
-      : 'This page seems safe.',
+    details,
   };
 }
 

@@ -1,5 +1,3 @@
-const sigmoid = (z) => 1 / (1 + Math.exp(-z));
-
 class StaticContentDetector {
   static LR_PARAMS = {
     bias: -2.2398080593777188,
@@ -32,8 +30,12 @@ class StaticContentDetector {
       StaticContentDetector.LR_PARAMS.bias
     );
 
+    const score = this._sigmoid(z);
+
     return {
-      score: sigmoid(z),
+      score,
+      threshold: StaticContentDetector.PHISHING_THRESHOLD,
+      verdict: score > StaticContentDetector.PHISHING_THRESHOLD,
       reasons: this._withReasons
         ? detectors.flatMap((d) => d.reasons ?? [])
         : undefined,
@@ -314,5 +316,9 @@ class StaticContentDetector {
     }
 
     return { score: 0, reasons };
+  }
+
+  _sigmoid(z) {
+    return 1 / (1 + Math.exp(-z));
   }
 }

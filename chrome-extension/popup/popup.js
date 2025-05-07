@@ -15,19 +15,19 @@ function updateExtensionElement(result) {
     urlPredictionScore,
     isContent,
     contentPredictionScore,
-    isCombinedPhishing,
-    combinedScore,
+    isStackedPhishing,
+    stackedScore,
     isPhishing,
     details,
   } = result;
   const resultEl = document.getElementById('result');
 
-  const combinedResultHTML =
+  const stackedResultHTML =
     isURL !== isContent
-      ? `<div class="result-item ${isCombinedPhishing ? 'phishing' : 'safe'}">
-         <span class="result-icon">${isCombinedPhishing ? '⚠️' : '✅'}</span>
+      ? `<div class="result-item ${isStackedPhishing ? 'phishing' : 'safe'}">
+         <span class="result-icon">${isStackedPhishing ? '⚠️' : '✅'}</span>
          <span class="result-text">Tie-break</span>
-         <span class="result-score">${(combinedScore * 100).toFixed(2)}%</span>
+         <span class="result-score">${(stackedScore * 100).toFixed(2)}%</span>
        </div>`
       : '';
 
@@ -47,7 +47,7 @@ function updateExtensionElement(result) {
           2
         )}%</span>
       </div>
-      ${combinedResultHTML}
+      ${stackedResultHTML}
     </div>
 
     <div class="result-details ${isPhishing ? 'phishing' : 'safe'}">

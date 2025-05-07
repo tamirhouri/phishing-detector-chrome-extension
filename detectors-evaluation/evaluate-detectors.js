@@ -259,9 +259,9 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
             );
 
             const COMBINED_LR_PARAMS = {
-              weights: [4.9935, 3.1742],
-              bias: -4.4864,
-              PHISHING_THRESHOLD: 0.5,
+              weights: [5.6314, 4.6967],
+              bias: -3.2016,
+              PHISHING_THRESHOLD: 0.4766,
             };
 
             const isUrlPhishing = urlResult?.score
@@ -277,7 +277,7 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
               return 1 / (1 + Math.exp(-x));
             };
 
-            const combinedScore =
+            const stackedScore =
               urlResult?.score && staticContentResult?.score
                 ? sigmoid(
                     COMBINED_LR_PARAMS.weights[0] * urlResult.score +
@@ -287,22 +287,22 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
                   )
                 : undefined;
 
-            const isCombinedPhishing = combinedScore
-              ? combinedScore > COMBINED_LR_PARAMS.PHISHING_THRESHOLD
+            const isStackedPhishing = stackedScore
+              ? stackedScore > COMBINED_LR_PARAMS.PHISHING_THRESHOLD
               : undefined;
 
             const isPhishing =
               isUrlPhishing === isStaticContentPhishing
                 ? isUrlPhishing
-                : isCombinedPhishing;
+                : isStackedPhishing;
 
             return {
               staticContentResult,
               urlResult,
               isStaticContentPhishing,
               isUrlPhishing,
-              combinedScore,
-              isCombinedPhishing,
+              stackedScore,
+              isStackedPhishing,
               isPhishing,
             };
           } catch (error) {
@@ -333,8 +333,8 @@ async function evaluateUrls(fromRecId = null, toRecId = null) {
           predictions.isStaticContentPhishing ?? undefined,
         urlScore: predictions.urlResult?.score,
         isUrlPhishing: predictions.isUrlPhishing ?? undefined,
-        combinedScore: predictions.combinedScore ?? undefined,
-        isCombinedPhishing: predictions.isCombinedPhishing ?? undefined,
+        stackedScore: predictions.stackedScore ?? undefined,
+        isStackedPhishing: predictions.isStackedPhishing ?? undefined,
         isPhishing: predictions.isPhishing ?? undefined,
         label: label === '1' ? 'phishing' : 'benign',
       };

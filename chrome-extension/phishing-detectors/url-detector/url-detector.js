@@ -1,4 +1,7 @@
-class UrlDetector {
+import '../../libs/tf.es2017.min.js';
+import { UrlFeaturesExtractor } from './url-feature-extractor.js';
+
+export class UrlDetector {
   static PHISHING_THRESHOLD = 0.33;
 
   constructor() {
@@ -16,25 +19,24 @@ class UrlDetector {
     }
   }
 
-  warmup() {
+  async predict(url) {
     try {
-      const dummyFeatures = this.extractFeatures('www.dummy.com');
-      const dummyInput = tf.tensor2d(dummyFeatures, [1, dummyFeatures.length]);
-      this.model.predict(dummyInput);
-    } catch (error) {
-      console.error('[url detector class] Error during model warmup:', error);
-    }
-  }
+      if (!this.model) {
+        console.error('[url detector class] Model not loaded.');
+        await this.load();
+      }
 
-  predict(url = location.href) {
-    try {
       const features = this.extractFeatures(url);
       const input = tf.tensor2d(features, [1, features.length]);
 
       const prediction = this.model.predict(input);
       const score = prediction.dataSync()[0];
 
-      return { score };
+      return {
+        score,
+        threshold: UrlDetector.PHISHING_THRESHOLD,
+        verdict: score > UrlDetector.PHISHING_THRESHOLD,
+      };
     } catch (error) {
       console.error(
         `[url detector class] Error during prediction for: ${url}`,

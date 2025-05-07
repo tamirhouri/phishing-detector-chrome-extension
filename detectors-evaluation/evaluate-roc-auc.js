@@ -41,7 +41,7 @@ async function runRocAucTest() {
     const urlYScores = results.map(r => r.urlScore || 0);
 
     const combinedYTrue = results.map(r => r.label === 'phishing' ? 1 : 0);
-    const combinedYScores = results.map(r => r.combinedScore || 0);
+    const combinedYScores = results.map(r => r.stackedScore || 0);
 
     const staticContentRocCurve = getRocCurve(staticContentYTrue, staticContentYScores);
     const urlRocCurve = getRocCurve(urlYTrue, urlYScores);
