@@ -35,14 +35,10 @@ async function getContentPrediction() {
 }
 
 async function getUrlPrediction() {
-  return chrome.runtime
-    .sendMessage({ action: 'PREDICT_URL', url: location.href })
-    .then((prediction) => {
-      if (prediction.status === 'FAIL') {
-        console.error('[content script] Error during URL prediction.');
-      }
-      return prediction;
-    });
+  return chrome.runtime.sendMessage({
+    action: 'PREDICT_URL',
+    url: location.href,
+  });
 }
 
 async function getPhishingPrediction() {
@@ -55,7 +51,7 @@ async function getPhishingPrediction() {
     return { isError: true, details: 'Error retrieving predictions.' };
   }
 
-  const stackedPrediction = stackedPhishingClassifier.predict(
+  const stackedPrediction = stackedPhishingClassifier.stack(
     urlPrediction,
     contentPrediction
   );

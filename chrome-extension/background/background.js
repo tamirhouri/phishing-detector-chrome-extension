@@ -1,20 +1,24 @@
 import { UrlDetector } from '../phishing-detectors/url-detector/url-detector.js';
 
-const urlDetector = new UrlDetector();
+let urlDetector = null;
+
+async function initUrlDetector() {
+  if (!urlDetector) {
+    urlDetector = new UrlDetector();
+    await urlDetector.load();
+  }
+}
 
 chrome.runtime.onInstalled.addListener(async () => {
-  await urlDetector.load();
+  await initUrlDetector();
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'PREDICT_URL') {
-    if (!urlDetector) {
-      sendResponse({ status: 'FAIL', error: 'UrlDetector failed to load' });
-      return;
-    }
-
-    urlDetector
-      .predict(message.url)
+    initUrlDetector()
+      .then(() => {
+        return urlDetector.predict(message.url);
+      })
       .then((prediction) => {
         sendResponse({ status: 'SUCCESS', ...prediction });
       })

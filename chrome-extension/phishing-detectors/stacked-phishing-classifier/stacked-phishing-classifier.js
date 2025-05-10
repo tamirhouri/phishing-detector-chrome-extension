@@ -6,7 +6,7 @@ class StackedPhishingClassifier {
 
   static PHISHING_THRESHOLD = 0.4766;
 
-  predict(urlPrediction, contentPrediction) {
+  stack(urlPrediction, contentPrediction) {
     const features = [urlPrediction.score, contentPrediction.score];
 
     const linearCombination = features.reduce(
@@ -20,6 +20,7 @@ class StackedPhishingClassifier {
     return {
       score,
       verdict: score > StackedPhishingClassifier.PHISHING_THRESHOLD,
+      threshold: StackedPhishingClassifier.PHISHING_THRESHOLD,
     };
   }
 
