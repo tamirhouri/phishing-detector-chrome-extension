@@ -191,7 +191,21 @@ export class UrlFeaturesExtractor {
     'update',
   ];
 
-  static UNCOMMON_TLDS = ['.tk', '.ml', '.ga', '.cf', '.gq'];
+  static UNCOMMON_TLDS = [
+    '.tk',
+    '.ml',
+    '.ga',
+    '.cf',
+    '.gq',
+    '.win',
+    '.top',
+    '.xin',
+    '.cc',
+    '.cfd',
+    '.icu',
+    '.sbs',
+    '.xyz',
+  ];
 
   static BRANDS = [
     'paypal',
