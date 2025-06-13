@@ -47,7 +47,7 @@ The system implements a three-tier detection pipeline:
 
 | Safe Website Detection | Phishing Alert |
 |----------------------|----------------|
-| ![Safe Site](path/to/safe-site-screenshot.png) | ![Phishing Detected](path/to/phishing-alert-screenshot.png) |
+| ![Safe Site](https://github.com/user-attachments/assets/0c668c3e-8524-4e1a-9fda-5c4be8aee1ff) | ![Phishing Detected](https://github.com/user-attachments/assets/e94eaf7e-7b82-450b-8c62-26a823d2fce9) |
 | Extension shows green "Safe" indicator | Real-time warning with threat details |
 
 ---
